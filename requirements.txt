@@ -1,3 +1,12 @@
-pytz==2024.1
-
-filelock==3.15.4
+Flask
+Flask-Login
+Flask-SQLAlchemy
+passlib[bcrypt]
+APScheduler
+cryptography
+python-dotenv
+pytz
+filelock
+gunicorn
+requests
+ccxt
