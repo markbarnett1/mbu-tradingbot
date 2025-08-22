@@ -1,0 +1,49 @@
+import requests
+
+class TradierBroker:
+    name = "tradier"
+
+    def __init__(self, token: str, account_id: str, paper: bool = True):
+        self.token = token or ""
+        self.account_id = account_id or ""
+        self.base = "https://sandbox.tradier.com" if paper else "https://api.tradier.com"
+        self.sess = requests.Session()
+        self.sess.headers.update({
+            "Authorization": f"Bearer {self.token}",
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+        })
+
+    def get_price(self, symbol: str) -> float:
+        try:
+            r = self.sess.get(f"{self.base}/v1/markets/quotes", params={"symbols": symbol}, timeout=10)
+            if r.ok:
+                data = r.json()
+                q = data.get("quotes", {}).get("quote")
+                if isinstance(q, list) and q:
+                    q = q[0]
+                return float((q or {}).get("last") or 0.0)
+        except Exception:
+            pass
+        return 0.0
+
+    def place_market_order(self, symbol: str, side: str, qty: float):
+        """
+        Place a simple equity market order.
+        NOTE: Tradier sandbox requires a valid account_id and token.
+        """
+        try:
+            url = f"{self.base}/v1/accounts/{self.account_id}/orders"
+            payload = {
+                "class": "equity",
+                "symbol": symbol,
+                "side": side.lower(),       # "buy" or "sell"
+                "quantity": int(qty),
+                "type": "market",
+                "duration": "day",
+            }
+            r = self.sess.post(url, json=payload, timeout=15)
+            data = r.json() if r.content else {}
+            return {"ok": r.ok, "status_code": r.status_code, "data": data}
+        except Exception as e:
+            return {"ok": False, "error": str(e)}
