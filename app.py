@@ -101,10 +101,14 @@ _bootstrapped = False
 
 def run_minutely():
     now_utc = datetime.now(tz=timezone.utc)
-    users = User.query.filter_by(subscription_active=True).all()
-    for u in users:
-        if should_trade_now(u, now_utc):
-            execute_trade_safe(u)
+    # FIX: wrap DB access in app context
+    with app.app_context():
+        users = User.query.filter_by(subscription_active=True).all()
+        for u in users:
+            if should_trade_now(u, now_utc):
+                execute_trade_safe(u)
+
+
 
 def start_scheduler():
     global scheduler
