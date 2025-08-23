@@ -13,47 +13,68 @@ from dotenv import load_dotenv
 load_dotenv()
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = os.getenv('FLASK_SECRET','change-me')
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('SQLALCHEMY_DATABASE_URI','sqlite:///mbu.db')
+app.config['SECRET_KEY'] = os.getenv('FLASK_SECRET', 'change-me')
+# Free plan friendly default DB path (inside container, not /data)
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('SQLALCHEMY_DATABASE_URI', 'sqlite:///mbu.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 login_manager = LoginManager(app)
 
 # Encryption for API keys
-FERNET = Fernet(os.getenv('ENCRYPTION_KEY','_'*44).encode() if len(os.getenv('ENCRYPTION_KEY',''))>=44 else Fernet.generate_key())
+# If ENCRYPTION_KEY is missing/too short, generate a throwaway (keeps app booting)
+_env_key = os.getenv('ENCRYPTION_KEY', '')
+FERNET = Fernet(_env_key.encode() if len(_env_key) >= 44 else Fernet.generate_key())
+
+# =========================
+# Models
+# =========================
 
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(255), unique=True, nullable=False)
     pw_hash = db.Column(db.String(255), nullable=False)
+
     subscription_active = db.Column(db.Boolean, default=False)
     trading_enabled = db.Column(db.Boolean, default=True)
+
     broker = db.Column(db.String(50), default='tradier')
-    symbol = db.Column(db.String(40), default=os.getenv('DEFAULT_SYMBOL','AAPL'))
-    qty = db.Column(db.Float, default=float(os.getenv('DEFAULT_QTY','1')))
-    side = db.Column(db.String(5), default=os.getenv('DEFAULT_SIDE','buy'))
-    daily_time = db.Column(db.String(5), default=os.getenv('DEFAULT_DAILY_TIME','09:30'))  # local hh:mm
+    symbol = db.Column(db.String(40), default=os.getenv('DEFAULT_SYMBOL', 'AAPL'))
+    qty = db.Column(db.Float, default=float(os.getenv('DEFAULT_QTY', '1')))
+    side = db.Column(db.String(5), default=os.getenv('DEFAULT_SIDE', 'buy'))
+
+    daily_time = db.Column(db.String(5), default=os.getenv('DEFAULT_DAILY_TIME', '09:30'))  # local hh:mm
     timezone = db.Column(db.String(64), default='UTC')
     trades_per_day = db.Column(db.Integer, default=1)
     trades_today = db.Column(db.Integer, default=0)
     last_trade_date = db.Column(db.String(10), default='')  # YYYY-MM-DD in user's local tz
+
     realized_pnl = db.Column(db.Float, default=0.0)
     position_qty = db.Column(db.Float, default=0.0)
     position_avg = db.Column(db.Float, default=0.0)
+
     enc_keys = db.Column(db.Text, default='')  # encrypted blob
 
     def set_keys(self, d: dict):
-        blob = ';'.join([f"{k}={d.get(k,'')}" for k in ['ALPACA_KEY','ALPACA_SECRET','ALPACA_BASE_URL','BINANCE_KEY','BINANCE_SECRET','COINBASE_KEY','COINBASE_SECRET','COINBASE_PASSPHRASE','TRADIER_TOKEN','TRADIER_ACCOUNT_ID']])
+        blob = ';'.join([
+            f"{k}={d.get(k, '')}"
+            for k in [
+                'ALPACA_KEY', 'ALPACA_SECRET', 'ALPACA_BASE_URL',
+                'BINANCE_KEY', 'BINANCE_SECRET',
+                'COINBASE_KEY', 'COINBASE_SECRET', 'COINBASE_PASSPHRASE',
+                'TRADIER_TOKEN', 'TRADIER_ACCOUNT_ID'
+            ]
+        ])
         self.enc_keys = FERNET.encrypt(blob.encode()).decode()
 
     def get(self, key):
         try:
             data = FERNET.decrypt(self.enc_keys.encode()).decode()
-            parts = dict(p.split('=',1) for p in data.split(';') if '=' in p)
-            return parts.get(key,'')
+            parts = dict(p.split('=', 1) for p in data.split(';') if '=' in p)
+            return parts.get(key, '')
         except Exception:
             return ''
+
 
 class TradeLog(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -70,16 +91,37 @@ class TradeLog(db.Model):
 def load_user(user_id):
     return User.query.get(int(user_id))
 
-@app.before_first_request
-def init_db():
-    db.create_all()
-    start_scheduler()
+# =========================
+# Scheduler
+# =========================
+
+scheduler = None
+
+def start_scheduler():
+    """Start a 1-minute cron that scans users and triggers eligible trades."""
+    global scheduler
+    if scheduler:
+        return
+    scheduler = BackgroundScheduler(timezone='UTC', daemon=True)
+    scheduler.add_job(run_minutely, 'cron', minute='*')
+    scheduler.start()
+
+def run_minutely():
+    now_utc = datetime.now(tz=timezone.utc)
+    users = User.query.filter_by(subscription_active=True).all()
+    for u in users:
+        if should_trade_now(u, now_utc):
+            execute_trade_safe(u)
+
+# =========================
+# Routes
+# =========================
 
 @app.route('/')
 def index():
     return render_template('index.html', year=datetime.utcnow().year)
 
-@app.route('/signup', methods=['GET','POST'])
+@app.route('/signup', methods=['GET', 'POST'])
 def signup():
     if request.method == 'POST':
         email = request.form['email'].strip().lower()
@@ -87,12 +129,13 @@ def signup():
         if User.query.filter_by(email=email).first():
             return 'Account already exists', 400
         u = User(email=email, pw_hash=bcrypt.hash(pw))
-        db.session.add(u); db.session.commit()
+        db.session.add(u)
+        db.session.commit()
         login_user(u)
         return redirect(url_for('dashboard'))
     return render_template('signup.html')
 
-@app.route('/login', methods=['GET','POST'])
+@app.route('/login', methods=['GET', 'POST'])
 def login():
     error = None
     if request.method == 'POST':
@@ -123,17 +166,32 @@ def all_timezones():
 def dashboard():
     logs = TradeLog.query.filter_by(user_id=current_user.id).order_by(TradeLog.id.desc()).limit(50).all()
     last_order = logs[0] if logs else None
-    return render_template('dashboard.html', user=current_user, paypal_email=os.getenv('PAYPAL_EMAIL',''), logs=logs, last_order=last_order, timezones=all_timezones())
+    return render_template(
+        'dashboard.html',
+        user=current_user,
+        paypal_email=os.getenv('PAYPAL_EMAIL', ''),
+        logs=logs,
+        last_order=last_order,
+        timezones=all_timezones()
+    )
 
 @app.route('/save-broker', methods=['POST'])
 @login_required
 def save_broker():
     u = current_user
-    u.broker = request.form.get('broker','tradier')
-    u.symbol = request.form.get('symbol','AAPL').strip()
-    u.qty = float(request.form.get('qty','1'))
-    u.side = request.form.get('side','buy')
-    keys = {k:request.form.get(k,'') for k in ['ALPACA_KEY','ALPACA_SECRET','ALPACA_BASE_URL','BINANCE_KEY','BINANCE_SECRET','COINBASE_KEY','COINBASE_SECRET','COINBASE_PASSPHRASE','TRADIER_TOKEN','TRADIER_ACCOUNT_ID']}
+    u.broker = request.form.get('broker', 'tradier')
+    u.symbol = request.form.get('symbol', 'AAPL').strip()
+    u.qty = float(request.form.get('qty', '1'))
+    u.side = request.form.get('side', 'buy')
+    keys = {
+        k: request.form.get(k, '')
+        for k in [
+            'ALPACA_KEY', 'ALPACA_SECRET', 'ALPACA_BASE_URL',
+            'BINANCE_KEY', 'BINANCE_SECRET',
+            'COINBASE_KEY', 'COINBASE_SECRET', 'COINBASE_PASSPHRASE',
+            'TRADIER_TOKEN', 'TRADIER_ACCOUNT_ID'
+        ]
+    }
     u.set_keys(keys)
     db.session.commit()
     return redirect(url_for('dashboard'))
@@ -142,10 +200,10 @@ def save_broker():
 @login_required
 def save_schedule():
     u = current_user
-    u.timezone = request.form.get('timezone','UTC')
-    u.daily_time = request.form.get('daily_time','09:30')
+    u.timezone = request.form.get('timezone', 'UTC')
+    u.daily_time = request.form.get('daily_time', '09:30')
     try:
-        u.trades_per_day = max(1, min(24, int(request.form.get('trades_per_day','1'))))
+        u.trades_per_day = max(1, min(24, int(request.form.get('trades_per_day', '1'))))
     except Exception:
         u.trades_per_day = 1
     db.session.commit()
@@ -155,7 +213,7 @@ def save_schedule():
 @login_required
 def toggle_trading():
     u = current_user
-    action = request.form.get('action','')
+    action = request.form.get('action', '')
     u.trading_enabled = (action == 'start')
     db.session.commit()
     return redirect(url_for('dashboard'))
@@ -175,7 +233,7 @@ def thank_you():
 @app.route('/paypal/ipn', methods=['POST'])
 def paypal_ipn():
     data = request.form.to_dict()
-    if data.get('receiver_email','').lower() != os.getenv('PAYPAL_EMAIL','').lower():
+    if data.get('receiver_email', '').lower() != os.getenv('PAYPAL_EMAIL', '').lower():
         return 'bad receiver', 400
     if data.get('payment_status') == 'Completed':
         payer = data.get('custom') or data.get('payer_email')
@@ -185,16 +243,25 @@ def paypal_ipn():
             db.session.commit()
     return 'ok'
 
+# =========================
+# Trading helpers
+# =========================
+
 def choose_broker(user):
     from brokers.tradier import TradierBroker
     from brokers.alpaca import AlpacaBroker
     from brokers.ccxt_brokers import BinanceBroker, CoinbaseBroker
     if user.broker == 'tradier':
-        token = user.get('TRADIER_TOKEN'); acct = user.get('TRADIER_ACCOUNT_ID')
-        paper = True if os.getenv('TRADIER_PAPER','true').lower()=='true' else False
+        token = user.get('TRADIER_TOKEN')
+        acct = user.get('TRADIER_ACCOUNT_ID')
+        paper = True if os.getenv('TRADIER_PAPER', 'true').lower() == 'true' else False
         return TradierBroker(token, acct, paper)
     if user.broker == 'alpaca':
-        return AlpacaBroker(user.get('ALPACA_KEY'), user.get('ALPACA_SECRET'), user.get('ALPACA_BASE_URL') or 'https://paper-api.alpaca.markets')
+        return AlpacaBroker(
+            user.get('ALPACA_KEY'),
+            user.get('ALPACA_SECRET'),
+            user.get('ALPACA_BASE_URL') or 'https://paper-api.alpaca.markets'
+        )
     if user.broker == 'binance':
         return BinanceBroker(user.get('BINANCE_KEY'), user.get('BINANCE_SECRET'))
     if user.broker == 'coinbase':
@@ -209,7 +276,9 @@ def log_and_update_pnl(u, symbol, side, qty, price, broker_name):
             u.position_qty = 0.0
             u.position_avg = 0.0
         else:
-            u.position_avg = (u.position_avg * u.position_qty + price * qty) / new_qty if (u.position_qty + qty) > 0 else price
+            u.position_avg = (
+                (u.position_avg * u.position_qty + price * qty) / new_qty
+            ) if (u.position_qty + qty) > 0 else price
             u.position_qty = new_qty
     else:  # sell
         close_qty = min(qty, u.position_qty)
@@ -219,7 +288,16 @@ def log_and_update_pnl(u, symbol, side, qty, price, broker_name):
             if u.position_qty == 0:
                 u.position_avg = 0.0
     u.realized_pnl += realized
-    log = TradeLog(user_id=u.id, ts=datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S'), symbol=symbol, side=side, qty=qty, price=price, broker=broker_name, realized_pnl=realized)
+    log = TradeLog(
+        user_id=u.id,
+        ts=datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S'),
+        symbol=symbol,
+        side=side,
+        qty=qty,
+        price=price,
+        broker=broker_name,
+        realized_pnl=realized
+    )
     db.session.add(log)
     db.session.commit()
 
@@ -255,20 +333,9 @@ def should_trade_now(u, now_utc):
         db.session.commit()
     return (hhmm == (u.daily_time or '09:30')) and (u.trades_today < (u.trades_per_day or 1))
 
-scheduler = None
-def start_scheduler():
-    global scheduler
-    if scheduler: return
-    scheduler = BackgroundScheduler(timezone='UTC', daemon=True)
-    scheduler.add_job(run_minutely, 'cron', minute='*')
-    scheduler.start()
-
-def run_minutely():
-    now_utc = datetime.now(tz=timezone.utc)
-    users = User.query.filter_by(subscription_active=True).all()
-    for u in users:
-        if should_trade_now(u, now_utc):
-            execute_trade_safe(u)
+# =========================
+# Concurrency guard & wake
+# =========================
 
 @app.route('/wake')
 def wake():
@@ -276,8 +343,9 @@ def wake():
     return jsonify(ok=True, ts=datetime.utcnow().isoformat())
 
 def user_lock_path(user_id: int):
-    os.makedirs('/data/locks', exist_ok=True)
-    return f"/data/locks/user_{user_id}.lock"
+    # Use a local folder (works on free plan)
+    os.makedirs('./locks', exist_ok=True)
+    return f"./locks/user_{user_id}.lock"
 
 def execute_trade_safe(u):
     # Prevent overlapping trades for the same user
@@ -299,5 +367,17 @@ def execute_trade_safe(u):
         except Exception:
             pass
 
+# =========================
+# Init (Flask 3.x compatible)
+# =========================
+
+with app.app_context():
+    db.create_all()
+    start_scheduler()
+
+# =========================
+# Entry
+# =========================
+
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=int(os.getenv('PORT','8080')))
+    app.run(host='0.0.0.0', port=int(os.getenv('PORT', '8080')))
