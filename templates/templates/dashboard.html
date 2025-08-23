@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>MBU Trading Bot — Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;margin:0;background:#0f172a;color:#e2e8f0}
+    header{background:#111827;padding:16px 20px;font-weight:700}
+    main{padding:20px;max-width:980px;margin:0 auto}
+    .grid{display:grid;gap:16px}
+    @media (min-width: 900px){ .grid-2{grid-template-columns:1fr 1fr} .grid-3{grid-template-columns:1fr 1fr 1fr} }
+    .card{background:#111827;border:1px solid #1f2937;border-radius:12px;padding:16px}
+    label{display:block;font-size:14px;margin:8px 0 4px}
+    input, select{width:100%;padding:10px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:#e2e8f0}
+    button{background:#2563eb;border:none;color:white;padding:10px 14px;border-radius:8px;cursor:pointer}
+    button.secondary{background:#374151}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:10px;border-bottom:1px solid #1f2937;text-align:left}
+    .muted{color:#94a3b8}
+    .ok{color:#10b981}
+    .warn{color:#f59e0b}
+    .bad{color:#ef4444}
+    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    a{color:#93c5fd}
+  </style>
+</head>
+<body>
+  <header>MBU Trading Bot — Dashboard</header>
+  <main class="grid">
+    <div class="card">
+      <h2>Account</h2>
+      <p class="muted">Logged in as <strong>{{ user.email }}</strong></p>
+      <div class="row">
+        <form method="post" action="{{ url_for('toggle_trading') }}">
+          {% if user.trading_enabled %}
+            <input type="hidden" name="action" value="stop" />
+            <button class="secondary">⏸️ Stop Trading</button>
+          {% else %}
+            <input type="hidden" name="action" value="start" />
+            <button>▶️ Start Trading</button>
+          {% endif %}
+        </form>
+        <form method="post" action="{{ url_for('place_now') }}">
+          <button class="secondary">🧪 Place Trade Now (test)</button>
+        </form>
+        <a href="{{ url_for('logout') }}"><button type="button" class="secondary">Log out</button></a>
+      </div>
+      <p class="muted" style="margin-top:10px;">
+        Subscription: 
+        {% if user.subscription_active %}<span class="ok">Active</span>{% else %}<span class="bad">Inactive</span>{% endif %}
+      </p>
+      <p class="muted">Realized PnL: <strong>{{ '%.2f' % (user.realized_pnl or 0.0) }}</strong></p>
+      {% if last_order %}
+        <p class="muted">Last order: {{ last_order.ts }} — {{ last_order.broker }} {{ last_order.side }} {{ last_order.qty }} {{ last_order.symbol }} @ {{ '%.2f' % (last_order.price or 0.0) }} (PnL {{ '%.2f' % (last_order.realized_pnl or 0.0) }})</p>
+      {% else %}
+        <p class="muted">No trades yet.</p>
+      {% endif %}
+    </div>
+
+    <div class="card">
+      <h2>Schedule</h2>
+      <form method="post" action="{{ url_for('save_schedule') }}" class="grid">
+        <div>
+          <label for="timezone">Timezone</label>
+          <select id="timezone" name="timezone">
+            {% for tz in timezones %}
+              <option value="{{ tz }}" {% if user.timezone==tz %}selected{% endif %}>{{ tz }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="grid-2">
+          <div>
+            <label for="daily_time">Daily time (HH:MM, 24h, local)</label>
+            <input id="daily_time" name="daily_time" value="{{ user.daily_time or '09:30' }}" placeholder="09:30" />
+          </div>
+          <div>
+            <label for="trades_per_day">Trades per day (1–24)</label>
+            <input id="trades_per_day" name="trades_per_day" type="number" min="1" max="24" value="{{ user.trades_per_day or 1 }}" />
+          </div>
+        </div>
+        <button>💾 Save Schedule</button>
+      </form>
+      <p class="muted">Default is 1 trade/day. Increase only if you understand the risks.</p>
+    </div>
+
+    <div class="card">
+      <h2>Broker & Symbols</h2>
+      <form method="post" action="{{ url_for('save_broker') }}" class="grid">
+        <div class="grid-3">
+          <div>
+            <label for="broker">Broker</label>
+            <select id="broker" name="broker">
+              <option value="tradier" {% if user.broker=='tradier' %}selected{% endif %}>Tradier (US stocks)</option>
+              <option value="alpaca" {% if user.broker=='alpaca' %}selected{% endif %}>Alpaca (stocks)</option>
+              <option value="binance" {% if user.broker=='binance' %}selected{% endif %}>Binance (crypto)</option>
+              <option value="coinbase" {% if user.broker=='coinbase' %}selected{% endif %}>Coinbase (crypto)</option>
+            </select>
+          </div>
+          <div>
+            <label for="symbol">Symbol (e.g. AAPL or BTC/USDT)</label>
+            <input id="symbol" name="symbol" value="{{ user.symbol or 'AAPL' }}" />
+          </div>
+          <div>
+            <label for="qty">Quantity</label>
+            <input id="qty" name="qty" type="number" step="any" value="{{ user.qty or 1 }}" />
+          </div>
+        </div>
+        <div>
+          <label for="side">Side</label>
+          <select id="side" name="side">
+            <option value="buy" {% if user.side=='buy' %}selected{% endif %}>Buy</option>
+            <option value="sell" {% if user.side=='sell' %}selected{% endif %}>Sell</option>
+          </select>
+        </div>
+
+        <h3>API Keys</h3>
+        <div class="grid-2">
+          <div>
+            <label>ALPACA_KEY</label><input name="ALPACA_KEY" />
+            <label>ALPACA_SECRET</label><input name="ALPACA_SECRET" />
+            <label>ALPACA_BASE_URL</label><input name="ALPACA_BASE_URL" placeholder="https://paper-api.alpaca.markets" />
+          </div>
+          <div>
+            <label>BINANCE_KEY</label><input name="BINANCE_KEY" />
+            <label>BINANCE_SECRET</label><input name="BINANCE_SECRET" />
+            <label>COINBASE_KEY</label><input name="COINBASE_KEY" />
+            <label>COINBASE_SECRET</label><input name="COINBASE_SECRET" />
+            <label>COINBASE_PASSPHRASE</label><input name="COINBASE_PASSPHRASE" />
+          </div>
+        </div>
+
+        <h3>Tradier (Stocks)</h3>
+        <div class="grid-2">
+          <div>
+            <label>TRADIER_TOKEN</label><input name="TRADIER_TOKEN" />
+          </div>
+          <div>
+            <label>TRADIER_ACCOUNT_ID</label><input name="TRADIER_ACCOUNT_ID" />
+          </div>
+        </div>
+
+        <button>💾 Save Broker Settings</button>
+      </form>
+      <p class="muted">Your keys are encrypted in the database using your server’s encryption key.</p>
+    </div>
+
+    <div class="card">
+      <h2>Trade Logs (latest 50)</h2>
+      <table>
+        <thead>
+          <tr><th>Time (UTC)</th><th>Broker</th><th>Side</th><th>Qty</th><th>Symbol</th><th>Price</th><th>Realized PnL</th></tr>
+        </thead>
+        <tbody>
+          {% for log in logs %}
+            <tr>
+              <td>{{ log.ts }}</td>
+              <td>{{ log.broker }}</td>
+              <td>{{ log.side }}</td>
+              <td>{{ log.qty }}</td>
+              <td>{{ log.symbol }}</td>
+              <td>{{ '%.2f' % (log.price or 0.0) }}</td>
+              <td>{{ '%.2f' % (log.realized_pnl or 0.0) }}</td>
+            </tr>
+          {% endfor %}
+          {% if not logs %}
+            <tr><td colspan="7" class="muted">No trades yet.</td></tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <h2>Help</h2>
+      <p>Questions? Your site is hosted at <code>/</code> and this dashboard lives at <code>/dashboard</code>. Use the <strong>Start/Stop</strong> button to pause trading without canceling your subscription.</p>
+      <p>Wake endpoint (for uptime): <a href="/wake">/wake</a></p>
+    </div>
+  </main>
+</body>
+</html>
