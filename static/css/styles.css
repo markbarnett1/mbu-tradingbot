@@ -111,3 +111,9 @@ footer {
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.3);
 }
+.hero-image {
+  display: block;
+  max-width: 350px;   /* size of robot picture */
+  margin: 20px auto;  /* centers it */
+  border-radius: 12px; /* rounded corners */
+}
