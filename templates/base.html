@@ -1,0 +1,75 @@
+{% raw %}<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{% block title %}MBU Trading Bot{% endblock %}</title>
+
+  <!-- Basic SEO -->
+  <meta name="description" content="MBU Trading Bot — automated stock & crypto trades with scheduling, risk controls, and per-user logs." />
+  <meta name="keywords" content="trading bot, automated trading, stocks, crypto, alpaca, binance, coinbase, tradier" />
+  <link rel="canonical" href="https://mbutradingbot.com/" />
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="MBU Trading Bot" />
+  <meta property="og:description" content="Automated stock & crypto trading with simple scheduling and safety checks." />
+  <meta property="og:url" content="https://mbutradingbot.com/" />
+  <meta property="og:type" content="website" />
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}" />
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="{{ url_for('index') }}">MBU Trading Bot</a>
+    <nav class="nav">
+      <a href="{{ url_for('index') }}">Home</a>
+      {% if current_user.is_authenticated %}
+        <a href="{{ url_for('dashboard') }}">Dashboard</a>
+        <a href="{{ url_for('logout') }}">Log out</a>
+      {% else %}
+        <a href="{{ url_for('signup') }}">Sign Up</a>
+        <a href="{{ url_for('login') }}">Login</a>
+      {% endif %}
+    </nav>
+  </header>
+
+  <main class="container">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="site-footer">
+    <p>© {{ 2025 }} MBU Trading Bot. All rights reserved.</p>
+    <p class="disclaimer">
+      Trading involves risk. Past performance does not guarantee future results.
+      MBU Trading Bot provides automation only; users are responsible for keys and brokerage accounts.
+    </p>
+  </footer>
+
+  <!-- Simple in-page help widget (client-side only for now) -->
+  <div id="chat-widget" class="chat-closed">
+    <button id="chat-toggle" aria-label="Open help">❓ Help</button>
+    <div class="chat-panel">
+      <div class="chat-header">MBU Help</div>
+      <div class="chat-body" id="chat-body"></div>
+      <form id="chat-form">
+        <input id="chat-input" placeholder="Ask about setup, scheduling, brokers…" autocomplete="off"/>
+        <button type="submit">Send</button>
+      </form>
+    </div>
+  </div>
+  <script src="{{ url_for('static', filename='js/chatbot.js') }}"></script>
+
+  <!-- Structured Data (JSON-LD) -->
+  <script type="application/ld+json">
+  {
+    "@context":"https://schema.org",
+    "@type":"SoftwareApplication",
+    "name":"MBU Trading Bot",
+    "operatingSystem":"Web",
+    "applicationCategory":"FinanceApplication",
+    "offers":{"@type":"Offer","price":"14.99","priceCurrency":"USD"},
+    "url":"https://mbutradingbot.com/"
+  }
+  </script>
+</body>
+</html>{% endraw %}
