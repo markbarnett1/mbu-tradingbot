@@ -1,11 +1,153 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>MBU Trading Bot - Home</title>
-<link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+  <meta charset="UTF-8" />
+  <title>MBU Trading Bot – AI Stocks & Crypto Automation</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="MBU Trading Bot helps you automate trades in stocks and crypto with risk controls, scheduling, and broker integrations." />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+
+  <!-- Open Graph (social share) -->
+  <meta property="og:title" content="MBU Trading Bot" />
+  <meta property="og:description" content="Automate stocks & crypto with smart scheduling and controls." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="{{ request.url_root|trim('/') }}" />
+  <meta property="og:image" content="{{ url_for('static', filename='img/robot.png', _external=True) }}" />
+
+  <!-- Basic JSON-LD schema for SEO -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "MBU Trading Bot",
+    "applicationCategory": "FinTech",
+    "operatingSystem": "Web",
+    "description": "AI-powered trading automation for stocks and cryptocurrencies with broker integrations and scheduling.",
+    "offers": {
+      "@type": "Offer",
+      "price": "14.99",
+      "priceCurrency": "USD"
+    },
+    "url": "{{ request.url_root|trim('/') }}"
+  }
+  </script>
+
+  <style>
+    /* Page-specific tweaks to complement styles.css */
+    .nav {
+      display:flex; gap:16px; justify-content:flex-end; align-items:center;
+      background:#0f172a; color:#fff; padding:12px 20px;
+    }
+    .nav a { color:#fff; font-weight:600; }
+    .brand { margin-right:auto; font-weight:800; letter-spacing:.5px; }
+    .hero .buttons { margin-top:16px; display:flex; gap:12px; }
+    .btn.secondary { background:#0f172a; }
+    .grid { display:grid; gap:18px; }
+    .grid-3 { grid-template-columns:repeat(3,1fr); }
+    @media (max-width: 900px){ .grid-3 { grid-template-columns:1fr; } }
+    .card {
+      background:#fff; border:1px solid #e5e7eb; border-radius:10px;
+      padding:18px; box-shadow:0 2px 10px rgba(0,0,0,.06);
+    }
+    .muted { color:#6b7280; }
+    .logos { display:flex; gap:16px; flex-wrap:wrap; align-items:center; }
+    .logos .pill { border:1px dashed #cbd5e1; padding:8px 12px; border-radius:999px; font-size:14px; color:#475569; background:#f8fafc; }
+    footer { margin-top:30px; }
+  </style>
 </head>
 <body>
-  <h1>Welcome to MBU Trading Bot</h1>
-  <p><a href="/signup">Sign Up</a> | <a href="/login">Login</a></p>
+
+  <!-- Top navigation -->
+  <nav class="nav">
+    <div class="brand">MBU TRADING BOT</div>
+    <a href="{{ url_for('signup') }}" class="btn">Sign Up</a>
+    <a href="{{ url_for('login') }}" class="btn secondary">Login</a>
+  </nav>
+
+  <!-- Hero -->
+  <section class="hero">
+    <img src="{{ url_for('static', filename='img/robot.png') }}" alt="MBU Trading Bot" />
+    <h1>Trade Smarter — Automatically</h1>
+    <p>Stocks or crypto. One trade a day or multiple. Your schedule, your risk, your rules.</p>
+    <div class="buttons">
+      <a href="{{ url_for('signup') }}" class="btn">Get Started</a>
+      <a href="{{ url_for('login') }}" class="btn secondary">Go to Dashboard</a>
+    </div>
+  </section>
+
+  <main class="container">
+
+    <!-- Value props -->
+    <section class="grid grid-3">
+      <div class="card">
+        <h3>Stocks & Crypto</h3>
+        <p class="muted">Choose your market: US stocks via connected brokers, or global crypto via supported exchanges.</p>
+      </div>
+      <div class="card">
+        <h3>Scheduling & Controls</h3>
+        <p class="muted">Set your timezone, daily time, and trades per day. Start/stop anytime from your dashboard.</p>
+      </div>
+      <div class="card">
+        <h3>Encrypted API Keys</h3>
+        <p class="muted">Your keys are encrypted at rest with a server-side encryption key.</p>
+      </div>
+    </section>
+
+    <!-- Integrations preview -->
+    <section class="card" style="margin-top:18px;">
+      <h2>Popular Integrations</h2>
+      <p class="muted">Connect a paper or live account (where supported). More coming soon.</p>
+      <div class="logos" aria-label="Supported brokers and exchanges">
+        <span class="pill">Tradier (Stocks)</span>
+        <span class="pill">Alpaca (Stocks)</span>
+        <span class="pill">Binance (Crypto)</span>
+        <span class="pill">Coinbase (Crypto)</span>
+      </div>
+    </section>
+
+    <!-- How it works -->
+    <section class="grid grid-3" style="margin-top:18px;">
+      <div class="card">
+        <h3>1) Create Account</h3>
+        <p class="muted">Sign up and log in to your dashboard.</p>
+      </div>
+      <div class="card">
+        <h3>2) Add Broker/API Keys</h3>
+        <p class="muted">Paste your API keys securely. Pick your symbol and side.</p>
+      </div>
+      <div class="card">
+        <h3>3) Set Schedule</h3>
+        <p class="muted">Choose your timezone, daily time, and how many trades per day.</p>
+      </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="card" style="margin-top:18px; text-align:center;">
+      <h2>Ready to try it?</h2>
+      <p class="muted">You can start in minutes. Paper trade first if you prefer.</p>
+      <a href="{{ url_for('signup') }}" class="btn">Create Free Account</a>
+    </section>
+
+    <!-- FAQ -->
+    <section class="card" style="margin-top:18px;">
+      <h2>FAQ</h2>
+      <details>
+        <summary>Can I trade stocks or crypto?</summary>
+        <p class="muted">Yes. Choose “Tradier” or “Alpaca” for stocks, or “Binance / Coinbase” for crypto in your dashboard.</p>
+      </details>
+      <details>
+        <summary>Is my data secure?</summary>
+        <p class="muted">API keys are encrypted in the database using a server-side encryption key you set in your environment.</p>
+      </details>
+      <details>
+        <summary>Does it work outside the U.S.?</summary>
+        <p class="muted">Yes—global crypto exchanges are supported, and stock brokers vary by region. Users may connect via their own providers.</p>
+      </details>
+    </section>
+
+    <footer>
+      <p class="muted">© {{ now().year if now else 2025 }} MBU Trading Bot · <a href="{{ url_for('login') }}">Dashboard</a> · <a href="{{ url_for('signup') }}">Sign Up</a></p>
+    </footer>
+  </main>
 </body>
 </html>
