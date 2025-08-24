@@ -1,55 +1,80 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>MBU Trading Bot — Home</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 <body>
 
-  <header>
-    <h1>Welcome to MBU Trading Bot</h1>
+  <header class="site-header">
+    <div class="container">
+      <h1>MBU Trading Bot</h1>
+      <nav class="top-nav">
+        <a href="{{ url_for('signup') }}">Sign Up</a>
+        <a href="{{ url_for('login') }}">Login</a>
+      </nav>
+    </div>
   </header>
 
-  <!-- Robot Image -->
+  <!-- Hero -->
   <section class="hero">
-    <img src="{{ url_for('static', filename='images/robot.jpg') }}" 
-         alt="MBU Trading Bot" 
-         class="hero-image">
+    <div class="container">
+      <img
+        src="{{ url_for('static', filename='images/robot.jpg') }}"
+        alt="MBU Trading Bot"
+        class="hero-robot"
+      />
+      <h2 class="hero-title">Automate your stock & crypto trading</h2>
+      <p class="hero-subtitle">
+        Schedule trades, manage risk, and connect to your favorite brokers.
+      </p>
+      <div class="cta-row">
+        <a class="btn btn-primary" href="{{ url_for('signup') }}">Get Started</a>
+        <a class="btn btn-secondary" href="{{ url_for('login') }}">I already have an account</a>
+      </div>
+    </div>
   </section>
 
-  <!-- Links to signup/login -->
-  <section class="auth-links">
-    <p>
-      <a href="{{ url_for('signup') }}">Sign Up</a> | 
-      <a href="{{ url_for('login') }}">Login</a>
-    </p>
-  </section>
-
-  <!-- About Section -->
+  <!-- About -->
   <section class="about">
-    <h2>What is MBU Trading Bot?</h2>
-    <p>
-      MBU Trading Bot is your automated assistant for stock and crypto trading.  
-      Trade smarter with advanced scheduling, PayPal subscriptions,  
-      and broker integrations including Tradier, Alpaca, Binance, and Coinbase.  
-    </p>
+    <div class="container">
+      <h3>What is MBU Trading Bot?</h3>
+      <p>
+        MBU Trading Bot is your automated assistant for stock and crypto trading.
+        It supports scheduling, position tracking, and broker integrations
+        including Tradier, Alpaca, Binance, and Coinbase. Keys are encrypted at rest.
+      </p>
+    </div>
   </section>
 
-  <!-- Features Section -->
+  <!-- Features -->
   <section class="features">
-    <h2>Why Choose Us?</h2>
-    <ul>
-      <li>📈 Automated stock & crypto trades</li>
-      <li>🌎 Available worldwide</li>
-      <li>🔒 Secure, encrypted API key storage</li>
-      <li>💳 Easy subscription management via PayPal</li>
-    </ul>
+    <div class="container grid">
+      <div class="card">
+        <h4>📈 Stocks & Crypto</h4>
+        <p>Choose your market, set symbol, side, and quantity. Paper trading friendly.</p>
+      </div>
+      <div class="card">
+        <h4>🕘 Smart Scheduling</h4>
+        <p>Run at your local time, with per-day trade limits and safety checks.</p>
+      </div>
+      <div class="card">
+        <h4>🔒 Secure by Design</h4>
+        <p>API keys encrypted with a server-side key; per-user trade locking.</p>
+      </div>
+      <div class="card">
+        <h4>💳 Easy Billing</h4>
+        <p>PayPal integration for subscriptions. Start/stop trading any time.</p>
+      </div>
+    </div>
   </section>
 
-  <footer>
-    <p>&copy; {{ datetime.utcnow().year }} MBU Trading Bot — All Rights Reserved</p>
+  <footer class="site-footer">
+    <div class="container">
+      <p>&copy; {{ year }} MBU Trading Bot. All rights reserved.</p>
+    </div>
   </footer>
 
 </body>
