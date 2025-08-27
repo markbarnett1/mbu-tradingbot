@@ -170,8 +170,8 @@ def landing_page():
     st.markdown("<h1 class='landing-header'>MBU TRADING BOT</h1>", unsafe_allow_html=True)
     st.markdown("<h2 class='landing-subheader'>Intelligent, Automated Trading for Your Success</h2>", unsafe_allow_html=True)
     
-    # Using the new image provided by the user
-    st.image("fotor_creation_2025-08-27.jpg", use_column_width=True)
+    # Using the new image provided by the user and fixing the deprecated parameter
+    st.image("fotor_creation_2025-08-27.jpg", use_container_width=True)
 
     st.markdown("<p style='text-align: center; max-width: 600px; margin: auto; font-size: 1.1rem;'>Our intelligent bot analyzes market trends in real-time, executing trades with precision and speed to maximize your returns. We take the emotion out of trading so you can focus on your goals.</p>", unsafe_allow_html=True)
     
