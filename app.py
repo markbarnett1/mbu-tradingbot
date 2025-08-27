@@ -13,7 +13,7 @@ USER_DATA = {
     }
 }
 
-# --- Custom CSS for Green and Gold Theme ---
+# --- Custom CSS for Professional Green and Gold Theme ---
 def apply_custom_css():
     """Applies custom CSS for the green and gold theme."""
     st.markdown("""
@@ -21,11 +21,14 @@ def apply_custom_css():
             .stApp {
                 background-color: #f0f2f6; /* Light gray background */
                 color: #2c3e50; /* Dark gray text */
+                font-family: 'Inter', sans-serif;
+            }
+            h1, h2, h3, h4, h5, h6 {
+                color: #2c3e50;
             }
             .stHeader {
-                background-color: #27ae60; /* Professional green */
-                padding: 1rem;
-                border-bottom: 2px solid #f1c40f; /* Gold accent */
+                background-color: transparent;
+                border: none;
             }
             .stSidebar {
                 background-color: #2c3e50; /* Darker sidebar for contrast */
@@ -49,23 +52,86 @@ def apply_custom_css():
                 border-bottom: 1px solid #ecf0f1;
                 padding-bottom: 0.5rem;
             }
-            .stMetric > div {
+            .metric-card > div {
                 background-color: #ffffff;
                 border-radius: 12px;
                 border-left: 5px solid #27ae60; /* Green highlight */
                 box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                padding: 1rem;
             }
             .stDataFrame {
                 border-radius: 12px;
                 box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             }
-            /* Add some spacing for a cleaner look */
             .block-container {
                 padding-top: 2rem;
                 padding-bottom: 2rem;
             }
-            .st-emotion-cache-18lgl3p {
-                margin-top: 1.5rem;
+            .main-content {
+                max-width: 1200px;
+                margin: auto;
+            }
+            /* Landing page styling */
+            .landing-container {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+                padding: 4rem 2rem;
+                background-color: #f0f2f6;
+            }
+            .landing-header {
+                font-size: 3rem;
+                font-weight: 800;
+                color: #2c3e50;
+            }
+            .landing-subheader {
+                font-size: 1.5rem;
+                color: #7f8c8d;
+                margin-top: -1rem;
+                margin-bottom: 2rem;
+            }
+            .hero-image {
+                margin: 2rem 0;
+            }
+            .stButton>button.cta-button {
+                background-color: #f1c40f;
+                color: #2c3e50;
+                font-weight: bold;
+                padding: 0.75rem 2rem;
+                font-size: 1.2rem;
+                border-radius: 50px;
+                border: none;
+                transition: transform 0.2s;
+            }
+            .stButton>button.cta-button:hover {
+                transform: scale(1.05);
+            }
+            /* Styling for the login/signup container */
+            .auth-card {
+                max-width: 500px;
+                margin: 5rem auto;
+                padding: 2rem;
+                background-color: #ffffff;
+                border-radius: 12px;
+                box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+                border-top: 5px solid #27ae60;
+            }
+            .switch-button {
+                background-color: transparent !important;
+                border: none !important;
+                color: #27ae60 !important;
+                text-decoration: underline;
+                margin-top: 1rem;
+                cursor: pointer;
+            }
+            /* Dashboard layout */
+            .dashboard-section {
+                background-color: #ffffff;
+                padding: 1.5rem;
+                border-radius: 12px;
+                margin-bottom: 1.5rem;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
             }
         </style>
         """, unsafe_allow_html=True)
@@ -78,38 +144,112 @@ if "two_fa_passed" not in st.session_state:
     st.session_state.two_fa_passed = False
 if "login_error" not in st.session_state:
     st.session_state.login_error = ""
+if "show_signup" not in st.session_state:
+    st.session_state.show_signup = False
+if "signup_success" not in st.session_state:
+    st.session_state.signup_success = False
+if "show_auth_forms" not in st.session_state:
+    st.session_state.show_auth_forms = False
+
+def landing_page():
+    """Displays the main landing page with marketing content."""
+    st.markdown("<div class='landing-container'>", unsafe_allow_html=True)
+    st.markdown("<h1 class='landing-header'>MBU TRADING BOT</h1>", unsafe_allow_html=True)
+    st.markdown("<h2 class='landing-subheader'>Intelligent, Automated Trading for Your Success</h2>", unsafe_allow_html=True)
+
+    # Robot and stock chart SVG
+    col1, col2 = st.columns([1, 1])
+    with col1:
+        st.write("")
+    with col2:
+        st.markdown("""
+            <div class="hero-image">
+                <svg width="400" height="300" viewBox="0 0 400 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Background Grid -->
+                    <rect x="0" y="0" width="400" height="300" fill="#f0f2f6"/>
+                    <path d="M0 50H400M0 100H400M0 150H400M0 200H400M0 250H400" stroke="#E5E7EB"/>
+                    <path d="M50 0V300M100 0V300M150 0V300M200 0V300M250 0V300M300 0V300M350 0V300" stroke="#E5E7EB"/>
+
+                    <!-- Stock Chart -->
+                    <polyline points="20,200 80,150 140,180 200,100 260,130 320,80 380,110" stroke="#27ae60" stroke-width="3" fill="none"/>
+                    <circle cx="20" cy="200" r="5" fill="#f1c40f"/>
+                    <circle cx="80" cy="150" r="5" fill="#f1c40f"/>
+                    <circle cx="140" cy="180" r="5" fill="#f1c40f"/>
+                    <circle cx="200" cy="100" r="5" fill="#f1c40f"/>
+                    <circle cx="260" cy="130" r="5" fill="#f1c40f"/>
+                    <circle cx="320" cy="80" r="5" fill="#f1c40f"/>
+                    <circle cx="380" cy="110" r="5" fill="#f1c40f"/>
+
+                    <!-- Robot Icon -->
+                    <rect x="180" y="150" width="40" height="60" rx="5" fill="#7f8c8d" stroke="#2c3e50" stroke-width="2"/>
+                    <circle cx="200" cy="145" r="15" fill="#7f8c8d" stroke="#2c3e50" stroke-width="2"/>
+                    <rect x="190" y="135" width="20" height="10" rx="3" fill="#2c3e50"/>
+                    <line x1="190" y1="210" x2="170" y2="230" stroke="#7f8c8d" stroke-width="4" stroke-linecap="round"/>
+                    <line x1="210" y1="210" x2="230" y2="230" stroke="#7f8c8d" stroke-width="4" stroke-linecap="round"/>
+                    <circle cx="195" cy="140" r="2" fill="white"/>
+                    <circle cx="205" cy="140" r="2" fill="white"/>
+                    <circle cx="200" cy="150" r="5" fill="#f1c40f"/>
+                </svg>
+            </div>
+            """, unsafe_allow_html=True)
+
+    st.markdown("<p style='text-align: center; max-width: 600px; margin: auto; font-size: 1.1rem;'>Our intelligent bot analyzes market trends in real-time, executing trades with precision and speed to maximize your returns. We take the emotion out of trading so you can focus on your goals.</p>", unsafe_allow_html=True)
+    
+    st.button("Get Started", key="start_button", type="primary", on_click=lambda: st.session_state.update(show_auth_forms=True), help="Click to login or sign up.")
+
+    st.markdown("</div>", unsafe_allow_html=True)
 
 def login_form():
     """Displays the login form."""
-    with st.form(key="login_form"):
-        st.subheader("Login to MBU Trading Bot")
-        email = st.text_input("Email", placeholder="Enter your email")
-        password = st.text_input("Password", type="password", placeholder="Enter your password")
+    with st.container():
+        st.subheader("Login to Your Account")
+        email = st.text_input("Email", placeholder="Enter your email", key="login_email")
+        password = st.text_input("Password", type="password", placeholder="Enter your password", key="login_password")
 
         col1, col2 = st.columns([1, 10])
         with col1:
-            submit_button = st.form_submit_button(label="Login")
+            submit_button = st.button("Login", key="login_button")
+        with col2:
+            st.button("Don't have an account? Sign Up", key="switch_to_signup", on_click=lambda: st.session_state.update(show_signup=True, login_error=""), help="Switch to the sign-up form.")
 
     if submit_button:
         if email in USER_DATA and USER_DATA[email]["password"] == password:
             st.session_state.login_error = ""
             st.session_state.authenticated = True
-            # Store user data for 2FA check
             st.session_state.user_email = email
             st.rerun()
         else:
             st.session_state.login_error = "Invalid email or password."
 
+def signup_form():
+    """Displays the sign-up form."""
+    with st.container():
+        st.subheader("Create a New Account")
+        email = st.text_input("Email", placeholder="Enter your email", key="signup_email")
+        password = st.text_input("Password", type="password", placeholder="Create a password", key="signup_password")
+        
+        col1, col2 = st.columns([1, 10])
+        with col1:
+            signup_button = st.button("Sign Up", key="signup_button")
+        with col2:
+            st.button("Already have an account? Login", key="switch_to_login", on_click=lambda: st.session_state.update(show_signup=False, login_error=""), help="Switch to the login form.")
+
+    if signup_button:
+        # In a real app, you would add the new user to a database here
+        # For this demo, we just show a success message
+        st.session_state.signup_success = True
+        st.session_state.show_signup = False # Switch back to login after success
+
 def two_fa_form():
     """Displays the 2FA form."""
-    with st.form(key="2fa_form"):
+    with st.container():
         st.subheader("Two-Factor Authentication")
         st.write(f"Please enter the 6-digit code sent to {st.session_state.user_email}")
         two_fa_input = st.text_input("6-digit code", max_chars=6)
 
         col1, col2 = st.columns([1, 10])
         with col1:
-            submit_button = st.form_submit_button(label="Verify")
+            submit_button = st.button("Verify", key="2fa_button")
 
     if submit_button:
         user_email = st.session_state.user_email
@@ -124,7 +264,7 @@ def two_fa_form():
 def main_dashboard():
     """Displays the main trading dashboard after successful login."""
     st.title("MBU Trading Bot Dashboard")
-    st.write("Welcome, Mark! Here you can monitor your trading activity.")
+    st.write("Welcome, Mark! Here is a professional overview of your trading activity.")
 
     st.sidebar.header("Navigation")
     if st.sidebar.button("Logout"):
@@ -132,31 +272,53 @@ def main_dashboard():
         st.session_state.two_fa_passed = False
         st.session_state.two_fa_code = None
         st.session_state.user_email = None
+        st.session_state.login_error = ""
+        st.session_state.show_auth_forms = False
         st.rerun()
 
+    # --- Section: Account Summary (Improved) ---
+    st.markdown("---")
     st.subheader("Account Summary")
+    
     col1, col2, col3 = st.columns(3)
-    col1.metric("Current Balance", "$10,500", "500")
-    col2.metric("Total Trades", "2,100", "15")
-    col3.metric("Win Rate", "75%", "2%")
+    with col1:
+        st.markdown("<div class='metric-card'>", unsafe_allow_html=True)
+        st.metric("Current Balance", "$10,500", "500")
+        st.markdown("</div>", unsafe_allow_html=True)
+    with col2:
+        st.markdown("<div class='metric-card'>", unsafe_allow_html=True)
+        st.metric("Total Trades", "2,100", "15")
+        st.markdown("</div>", unsafe_allow_html=True)
+    with col3:
+        st.markdown("<div class='metric-card'>", unsafe_allow_html=True)
+        st.metric("Win Rate", "75%", "2%")
+        st.markdown("</div>", unsafe_allow_html=True)
 
-    st.subheader("Performance Chart")
-    chart_data = pd.DataFrame(
-        np.random.randn(20, 3),
-        columns=["BTC", "ETH", "AAPL"]
-    ).cumsum()
-    st.line_chart(chart_data)
+    # --- Section: Performance Chart ---
+    st.markdown("---")
+    st.subheader("Bot Performance")
+    with st.container():
+        st.write("This chart shows the cumulative performance of the bot over time.")
+        chart_data = pd.DataFrame(
+            np.random.randn(20, 3),
+            columns=["BTC", "ETH", "AAPL"]
+        ).cumsum()
+        st.line_chart(chart_data)
 
-    st.subheader("Recent Trades")
-    trade_data = pd.DataFrame({
-        "Date": [datetime.date(2025, 8, 26), datetime.date(2025, 8, 25), datetime.date(2025, 8, 24)],
-        "Symbol": ["BTC", "ETH", "AAPL"],
-        "Type": ["BUY", "SELL", "BUY"],
-        "Quantity": [0.5, 2.0, 10],
-        "Price": [26000, 1800, 150],
-        "Status": ["Completed", "Completed", "Completed"]
-    })
-    st.dataframe(trade_data, use_container_width=True)
+    # --- Section: Recent Trades ---
+    st.markdown("---")
+    st.subheader("Recent Trade History")
+    with st.container():
+        st.write("A detailed log of recent trades executed by the bot.")
+        trade_data = pd.DataFrame({
+            "Date": [datetime.date(2025, 8, 26), datetime.date(2025, 8, 25), datetime.date(2025, 8, 24)],
+            "Symbol": ["BTC", "ETH", "AAPL"],
+            "Type": ["BUY", "SELL", "BUY"],
+            "Quantity": [0.5, 2.0, 10],
+            "Price": [26000, 1800, 150],
+            "Status": ["Completed", "Completed", "Completed"]
+        })
+        st.dataframe(trade_data, use_container_width=True)
 
 
 # --- Main App Logic ---
@@ -172,7 +334,18 @@ if st.session_state.authenticated:
     else:
         main_dashboard()
 else:
-    login_form()
+    if not st.session_state.show_auth_forms:
+        landing_page()
+    else:
+        st.markdown("<div class='auth-card'>", unsafe_allow_html=True)
+        if st.session_state.show_signup:
+            signup_form()
+        else:
+            login_form()
 
-if st.session_state.login_error:
-    st.error(st.session_state.login_error)
+        if st.session_state.login_error:
+            st.error(st.session_state.login_error)
+        if st.session_state.signup_success:
+            st.success("Account created successfully! Please log in.")
+            st.session_state.signup_success = False
+        st.markdown("</div>", unsafe_allow_html=True)
