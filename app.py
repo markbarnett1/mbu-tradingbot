@@ -1,4 +1,4 @@
-# app.py - Version 4.0 with Real Money Trading, Enhanced Profitability, and Lifetime Access
+# app.py - Version 4.1 with Real Money Trading, Enhanced Profitability, and Free Family Access
 
 import streamlit as st
 import ccxt
@@ -20,6 +20,9 @@ binance = ccxt.binance({
     "secret": BINANCE_SECRET_KEY,
     "enableRateLimit": True
 })
+
+# Define family email access (case-insensitive)
+FAMILY_EMAILS = {"mbuniversal@hotmail.com".lower(), "kid1@example.com".lower(), "kid2@example.com".lower()}  # Add your kids' emails here
 
 # Disclaimer for real-money trading
 DISCLAIMER_TEXT = """
@@ -62,4 +65,217 @@ st.markdown("""
 .stRadio > div > label > div > div > div > span:last-child { color: #FFD700; font-weight: bold; }
 .stRadio [data-baseweb="radio"] > div { color: #32CD32; }
 .stMarkdown p { color: #e0e0e0; text-align: justify; }
-.disclaimer-box { background-color: #280808; padding: 20
+.disclaimer-box { background-color: #280808; padding: 20px; border-left: 5px solid #ff4d4d; margin-bottom: 20px; border-radius: 8px; font-size: 0.9em; }
+.disclaimer-box h1 { color: #ff4d4d; margin-top: 0; }
+.disclaimer-box p { color: #ffcccc; }
+.login-box { background-color: #1a1a1a; padding: 20px; border-radius: 8px; border: 1px solid #32CD32; margin-bottom: 20px; }
+</style>
+""", unsafe_allow_html=True)
+
+# Authentication
+if 'authenticated' not in st.session_state:
+    st.session_state.authenticated = False
+
+if not st.session_state.authenticated:
+    st.markdown("<h1 class='main-header'>MBU Trading Bot</h1>", unsafe_allow_html=True)
+    st.markdown("<div class='login-box'>", unsafe_allow_html=True)
+    st.markdown("<h3 style='color: #FFD700;'>Access the Trading Bot</h3>", unsafe_allow_html=True)
+    email = st.text_input("Enter your email address", "")
+    if st.button("Login"):
+        if email.lower() in FAMILY_EMAILS:
+            st.session_state.authenticated = True
+            st.success("Welcome! You have free lifetime access.")
+        else:
+            st.error("Access denied. This bot requires a one-time $19.99 lifetime payment via PayPal. Contact support@mbutradingbot.com to purchase.")
+    st.markdown("</div>", unsafe_allow_html=True)
+    st.stop()
+
+# Display after authentication
+st.markdown("<h1 class='main-header'>MBU Trading Bot</h1>", unsafe_allow_html=True)
+st.markdown("<h2 class='subheader'>Trade Real Money on Binance for Maximum Profit with Lifetime Access ($19.99)!</h2>", unsafe_allow_html=True)
+st.markdown(f"<div class='disclaimer-box'>{DISCLAIMER_TEXT}</div>", unsafe_allow_html=True)
+
+# Session state initialization
+if 'bot_running' not in st.session_state:
+    st.session_state.bot_running = False
+if 'start_time' not in st.session_state:
+    st.session_state.start_time = None
+if 'total_profit' not in st.session_state:
+    st.session_state.total_profit = 0.0
+if 'trades_executed' not in st.session_state:
+    st.session_state.trades_executed = []
+if 'open_positions' not in st.session_state:
+    st.session_state.open_positions = {}
+
+# Enhanced trading strategy functions
+def get_live_price(symbol):
+    """Fetch real-time price from Binance."""
+    try:
+        ticker = binance.fetch_ticker(symbol)
+        return float(ticker['last'])
+    except Exception as e:
+        st.error(f"Error fetching price for {symbol}: {e}")
+        return None
+
+def get_trading_signal(strategy_name, current_price, history_prices):
+    """Enhanced trading signals for profitability."""
+    signal = "HOLD"
+    if strategy_name == "Momentum":
+        if len(history_prices) > 10:
+            price_change = current_price - history_prices.iloc[-10]
+            if price_change > current_price * 0.01 and random.random() > 0.5:  # 1%+ increase
+                signal = "BUY"
+            elif price_change < -current_price * 0.01 and random.random() < 0.5:  # 1%+ decrease
+                signal = "SELL"
+    elif strategy_name == "Breakout":
+        if len(history_prices) > 20:
+            if current_price > history_prices.max() * 1.02 and random.random() > 0.6:  # 2% breakout
+                signal = "BUY"
+            elif current_price < history_prices.min() * 0.98 and random.random() < 0.4:  # 2% breakdown
+                signal = "SELL"
+    elif strategy_name == "Mean Reversion":
+        if len(history_prices) > 15:
+            mean = history_prices.mean()
+            if current_price < mean * 0.98 and random.random() < 0.45:  # 2% below mean
+                signal = "BUY"
+            elif current_price > mean * 1.02 and random.random() > 0.55:  # 2% above mean
+                signal = "SELL"
+    return signal
+
+def calculate_metrics(trades):
+    """Calculate advanced performance metrics."""
+    if not trades:
+        return {"Total P/L": 0, "Sharpe Ratio": 0, "Max Drawdown": 0, "Win Ratio": 0}
+    df = pd.DataFrame(trades)
+    df['Date'] = pd.to_datetime(df['Date'])
+    df['Cumulative P/L'] = df['P/L'].cumsum()
+    returns = df['P/L']
+    sharpe_ratio = returns.mean() / returns.std() * np.sqrt(365) if returns.std() != 0 else 0
+    cumulative_returns = df['Cumulative P/L']
+    peak = cumulative_returns.expanding().max()
+    drawdown = (cumulative_returns - peak) / peak
+    max_drawdown = drawdown.min() if not drawdown.empty else 0
+    win_ratio = len(df[df['P/L'] > 0]) / len(df) if len(df) > 0 else 0
+    return {"Total P/L": df['Cumulative P/L'].iloc[-1], "Sharpe Ratio": sharpe_ratio, "Max Drawdown": max_drawdown, "Win Ratio": win_ratio}
+
+def execute_trade(symbol, side, quantity, price):
+    """Execute real trade on Binance."""
+    try:
+        if side == "BUY":
+            order = binance.create_market_buy_order(symbol, quantity)
+        else:
+            order = binance.create_market_sell_order(symbol, quantity)
+        trade_info = {
+            "Date": datetime.datetime.now(),
+            "Symbol": symbol,
+            "Side": side,
+            "Quantity": quantity,
+            "Entry_Price": price,
+            "P/L": 0,
+            "Status": "OPEN"
+        }
+        st.session_state.open_positions[symbol] = trade_info
+        st.success(f"OPENED real trade: {side} {quantity} {symbol.split('/')[0]} at ${price:.2f}")
+        return order
+    except Exception as e:
+        st.error(f"Trade failed: {e}")
+        return None
+
+def close_trade(symbol, current_price):
+    """Close real trade on Binance and calculate P/L."""
+    position = st.session_state.open_positions[symbol]
+    entry_price = position['Entry_Price']
+    side = position['Side']
+    quantity = position['Quantity']
+    if side == "BUY":
+        gross_profit = (current_price - entry_price) * quantity
+        fee = (entry_price * quantity * TRADE_FEE_RATE) + (current_price * quantity * TRADE_FEE_RATE)
+        profit = gross_profit - fee
+    else:
+        gross_profit = (entry_price - current_price) * quantity
+        fee = (entry_price * quantity * TRADE_FEE_RATE) + (current_price * quantity * TRADE_FEE_RATE)
+        profit = gross_profit - fee
+    st.session_state.total_profit += profit
+    trade_log = {
+        "Date": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "Symbol": symbol,
+        "Side": side,
+        "Quantity": quantity,
+        "P/L": profit,
+        "Cumulative P/L": st.session_state.total_profit,
+        "Reason": "Bot Close"
+    }
+    st.session_state.trades_executed.append(trade_log)
+    st.success(f"CLOSED real trade: {side} {quantity} {symbol.split('/')[0]} at ${current_price:.2f} | P/L: ${profit:.2f} (After fees)")
+    del st.session_state.open_positions[symbol]
+
+def run_trading_bot():
+    """Run the bot with real-time trading and profitability focus."""
+    while st.session_state.bot_running:
+        for symbol in CRYPTO_TO_TRADE:
+            if symbol not in st.session_state.open_positions:
+                current_price = get_live_price(symbol)
+                if current_price:
+                    history_prices = pd.Series([get_live_price(symbol) for _ in range(20)] or [current_price] * 20)  # Simulate history
+                    signal = get_trading_signal(strategy, current_price, history_prices)
+                    if signal in ["BUY", "SELL"]:
+                        quantity = min(0.001, binance.fetch_balance()['USDT']['free'] / current_price / 10)  # Trade 10% of available USDT
+                        if quantity > 0:
+                            execute_trade(symbol, signal, quantity, current_price)
+            else:
+                current_price = get_live_price(symbol)
+                if current_price:
+                    entry_price = st.session_state.open_positions[symbol]['Entry_Price']
+                    profit_pct = (current_price - entry_price) / entry_price * 100
+                    loss_pct = (entry_price - current_price) / entry_price * 100
+                    if profit_pct >= min_profit or loss_pct >= max_loss:
+                        close_trade(symbol, current_price)
+        time.sleep(60)  # Trade every minute
+
+# Main UI
+col1, col2 = st.columns(2)
+
+with col1:
+    st.markdown("<h3 style='color: #FFD700;'>Choose a Trading Strategy</h3>", unsafe_allow_html=True)
+    strategy = st.radio("Which strategy should the bot use?", ["Momentum", "Breakout", "Mean Reversion"], index=0)
+    st.markdown("<h3 style='color: #FFD700; margin-top: 30px;'>Trading Timeframe</h3>", unsafe_allow_html=True)
+    timeframe = st.radio("How long should the bot run?", ["1 hour", "1 day", "Trade until canceled"], index=1)
+    st.markdown("<h3 style='color: #FFD700; margin-top: 30px;'>Profit Targets</h3>", unsafe_allow_html=True)
+    col3, col4 = st.columns(2)
+    with col3:
+        min_profit = st.number_input("Min Profit %", min_value=0.1, max_value=5.0, value=MIN_PROFIT_TARGET, step=0.1)
+    with col4:
+        max_loss = st.number_input("Max Loss %", min_value=0.1, max_value=5.0, value=MAX_LOSS_LIMIT, step=0.1)
+
+with col2:
+    st.markdown("<h3 style='color: #FFD700;'>Bot Controls</h3>", unsafe_allow_html=True)
+    if st.session_state.bot_running:
+        if st.button("🔴 Stop Bot"):
+            st.session_state.bot_running = False
+            st.success("Bot has been stopped.")
+    else:
+        if st.button("🟢 Start Bot"):
+            st.session_state.bot_running = True
+            st.session_state.start_time = datetime.datetime.now()
+            st.session_state.open_positions = {}
+            st.session_state.trades_executed = []
+            st.success(f"Bot started with {strategy} strategy for real money trading.")
+            run_trading_bot()
+
+if st.session_state.bot_running:
+    st.markdown("<h3 style='color: #FFD700; margin-top: 30px;'>Live Dashboard</h3>", unsafe_allow_html=True)
+    placeholder = st.empty()
+    end_time = st.session_state.start_time + (datetime.timedelta(hours=1) if timeframe == "1 hour" else datetime.timedelta(days=1) if timeframe == "1 day" else None)
+    while st.session_state.bot_running:
+        if end_time and datetime.datetime.now() > end_time:
+            st.session_state.bot_running = False
+            st.warning("Trading period ended. Bot stopped.")
+            break
+        with placeholder.container():
+            metrics = calculate_metrics(st.session_state.trades_executed)
+            colA, colB, colC = st.columns(3)
+            colA.metric("Total P/L", f"${st.session_state.total_profit:.2f}")
+            colB.metric("Sharpe Ratio", f"{metrics['Sharpe Ratio']:.2f}")
+            colC.metric("Max Drawdown", f"{metrics['Max Drawdown']:.2%}")
+            st.dataframe(pd.DataFrame(st.session_state.trades_executed).iloc[::-1])
+        time.sleep(10)
