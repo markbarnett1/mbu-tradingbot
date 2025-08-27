@@ -31,7 +31,6 @@ DISCLAIMER_TEXT = """
 This trading bot enables real-money trading on Binance. Automated trading involves **significant financial risk**, and you may lose more than your initial investment. There is **no guarantee of profit**, despite our profitability enhancements, as markets are unpredictable.
 
 By using this bot, you acknowledge full responsibility for your financial decisions and outcomes. Use with caution, start with small amounts, and consult a financial advisor. The creators are not liable for losses.
-
 """
 
 # Tradeable assets (focus on high-liquidity, profitable options)
