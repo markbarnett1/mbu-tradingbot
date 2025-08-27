@@ -149,37 +149,6 @@ def apply_custom_css():
         </style>
         """, unsafe_allow_html=True)
 
-# --- SVG Hero Image ---
-# This is the corrected way to embed the SVG
-def get_hero_svg():
-    return """
-        <svg width="400" height="300" viewBox="0 0 400 300" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <!-- Background Grid -->
-            <rect x="0" y="0" width="400" height="300" fill="#f0f2f6"/>
-            <path d="M0 50H400M0 100H400M0 150H400M0 200H400M0 250H400" stroke="#E5E7EB"/>
-            <path d="M50 0V300M100 0V300M150 0V300M200 0V300M250 0V300M300 0V300M350 0V300" stroke="#E5E7EB"/>
-
-            <!-- Stock Chart -->
-            <polyline points="20,200 80,150 140,180 200,100 260,130 320,80 380,110" stroke="#27ae60" stroke-width="3" fill="none"/>
-            <circle cx="20" cy="200" r="5" fill="#f1c40f"/>
-            <circle cx="80" cy="150" r="5" fill="#f1c40f"/>
-            <circle cx="140" cy="180" r="5" fill="#f1c40f"/>
-            <circle cx="200" cy="100" r="5" fill="#f1c40f"/>
-            <circle cx="260" cy="130" r="5" fill="#f1c40f"/>
-            <circle cx="320" cy="80" r="5" fill="#f1c40f"/>
-            <circle cx="380" cy="110" r="5" fill="#f1c40f"/>
-
-            <!-- Robot Icon -->
-            <rect x="180" y="150" width="40" height="60" rx="5" fill="#7f8c8d" stroke="#2c3e50" stroke-width="2"/>
-            <circle cx="200" cy="145" r="15" fill="#7f8c8d" stroke="#2c3e50" stroke-width="2"/>
-            <rect x="190" y="135" width="20" height="10" rx="3" fill="#2c3e50"/>
-            <line x1="190" y1="210" x2="170" y2="230" stroke="#7f8c8d" stroke-width="4" stroke-linecap="round"/>
-            <line x1="210" y1="210" x2="230" y2="230" stroke="#7f8c8d" stroke-width="4" stroke-linecap="round"/>
-            <circle cx="195" cy="140" r="2" fill="white"/>
-            <circle cx="205" cy="140" r="2" fill="white"/>
-            <circle cx="200" cy="150" r="5" fill="#f1c40f"/>
-        </svg>
-    """
 
 # --- State Management and UI Functions ---
 if "authenticated" not in st.session_state:
@@ -201,12 +170,8 @@ def landing_page():
     st.markdown("<h1 class='landing-header'>MBU TRADING BOT</h1>", unsafe_allow_html=True)
     st.markdown("<h2 class='landing-subheader'>Intelligent, Automated Trading for Your Success</h2>", unsafe_allow_html=True)
     
-    st.markdown(
-        f'<div class="hero-image" style="margin: auto;">'
-        f'<img src="data:image/svg+xml;utf8,{get_hero_svg()}" style="display: block; width: 100%; max-width: 400px;"/>'
-        f'</div>',
-        unsafe_allow_html=True
-    )
+    # Using the new image provided by the user
+    st.image("fotor_creation_2025-08-27.jpg", use_column_width=True)
 
     st.markdown("<p style='text-align: center; max-width: 600px; margin: auto; font-size: 1.1rem;'>Our intelligent bot analyzes market trends in real-time, executing trades with precision and speed to maximize your returns. We take the emotion out of trading so you can focus on your goals.</p>", unsafe_allow_html=True)
     
