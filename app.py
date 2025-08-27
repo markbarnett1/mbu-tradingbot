@@ -15,6 +15,7 @@ import smtplib
 from email.mime.text import MIMEText
 from twilio.rest import Client
 import ssl
+import uuid
 import random
 
 # Load environment variables
@@ -241,8 +242,8 @@ if not st.session_state.authenticated:
             st.session_state.show_signup = True
         if st.button("Forgot Password"):
             st.session_state.show_forgot = True
-        st.markdown("</div>", unsafe_allow_html=True)
-        st.markdown(f"<div class='disclaimer-box'>{DISCLAIMER_TEXT}</div>", unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
+    st.markdown(f"<div class='disclaimer-box'>{DISCLAIMER_TEXT}</div>", unsafe_allow_html=True)
     st.stop()
 
 # Display after authentication
@@ -252,7 +253,7 @@ if st.button("Change Password"):
     st.session_state.show_change_pw = True
 st.markdown("</div>", unsafe_allow_html=True)
 
-# Trading UI and logic (unchanged)
+# Trading UI and logic
 col1, col2 = st.columns(2)
 
 with col1:
@@ -299,3 +300,122 @@ if st.session_state.bot_running:
             colC.metric("Max Drawdown", f"{metrics['Max Drawdown']:.2%}")
             st.dataframe(pd.DataFrame(st.session_state.trades_executed).iloc[::-1])
         time.sleep(10)
+
+# Trading functions
+def get_live_price(symbol):
+    try:
+        ticker = binance.fetch_ticker(symbol)
+        return float(ticker['last'])
+    except Exception as e:
+        st.error(f"Error fetching price for {symbol}: {e}")
+        return None
+
+def get_trading_signal(strategy_name, current_price, history_prices):
+    signal = "HOLD"
+    if strategy_name == "Momentum":
+        if len(history_prices) > 10:
+            price_change = current_price - history_prices.iloc[-10]
+            if price_change > current_price * 0.01 and np.random.random() > 0.5:
+                signal = "BUY"
+            elif price_change < -current_price * 0.01 and np.random.random() < 0.5:
+                signal = "SELL"
+    elif strategy_name == "Breakout":
+        if len(history_prices) > 20:
+            if current_price > history_prices.max() * 1.02 and np.random.random() > 0.6:
+                signal = "BUY"
+            elif current_price < history_prices.min() * 0.98 and np.random.random() < 0.4:
+                signal = "SELL"
+    elif strategy_name == "Mean Reversion":
+        if len(history_prices) > 15:
+            mean = history_prices.mean()
+            if current_price < mean * 0.98 and np.random.random() < 0.45:
+                signal = "BUY"
+            elif current_price > mean * 1.02 and np.random.random() > 0.55:
+                signal = "SELL"
+    return signal
+
+def calculate_metrics(trades):
+    if not trades:
+        return {"Total P/L": 0, "Sharpe Ratio": 0, "Max Drawdown": 0, "Win Ratio": 0}
+    df = pd.DataFrame(trades)
+    df['Date'] = pd.to_datetime(df['Date'])
+    df['Cumulative P/L'] = df['P/L'].cumsum()
+    returns = df['P/L']
+    sharpe_ratio = returns.mean() / returns.std() * np.sqrt(365) if returns.std() != 0 else 0
+    cumulative_returns = df['Cumulative P/L']
+    peak = cumulative_returns.expanding().max()
+    drawdown = (cumulative_returns - peak) / peak
+    max_drawdown = drawdown.min() if not drawdown.empty else 0
+    win_ratio = len(df[df['P/L'] > 0]) / len(df) if len(df) > 0 else 0
+    return {"Total P/L": df['Cumulative P/L'].iloc[-1], "Sharpe Ratio": sharpe_ratio, "Max Drawdown": max_drawdown, "Win Ratio": win_ratio}
+
+def execute_trade(symbol, side, quantity, price):
+    try:
+        if side == "BUY":
+            order = binance.create_market_buy_order(symbol, quantity)
+        else:
+            order = binance.create_market_sell_order(symbol, quantity)
+        trade_info = {
+            "Date": datetime.datetime.now(),
+            "Symbol": symbol,
+            "Side": side,
+            "Quantity": quantity,
+            "Entry_Price": price,
+            "P/L": 0,
+            "Status": "OPEN"
+        }
+        st.session_state.open_positions[symbol] = trade_info
+        st.success(f"OPENED real trade: {side} {quantity} {symbol.split('/')[0]} at ${price:.2f}")
+        return order
+    except Exception as e:
+        st.error(f"Trade failed: {e}")
+        return None
+
+def close_trade(symbol, current_price):
+    position = st.session_state.open_positions[symbol]
+    entry_price = position['Entry_Price']
+    side = position['Side']
+    quantity = position['Quantity']
+    if side == "BUY":
+        gross_profit = (current_price - entry_price) * quantity
+        fee = (entry_price * quantity * TRADE_FEE_RATE) + (current_price * quantity * TRADE_FEE_RATE)
+        profit = gross_profit - fee
+    else:
+        gross_profit = (entry_price - current_price) * quantity
+        fee = (entry_price * quantity * TRADE_FEE_RATE) + (current_price * quantity * TRADE_FEE_RATE)
+        profit = gross_profit - fee
+    st.session_state.total_profit += profit
+    trade_log = {
+        "Date": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "Symbol": symbol,
+        "Side": side,
+        "Quantity": quantity,
+        "P/L": profit,
+        "Cumulative P/L": st.session_state.total_profit,
+        "Reason": "Bot Close"
+    }
+    st.session_state.trades_executed.append(trade_log)
+    st.success(f"CLOSED real trade: {side} {quantity} {symbol.split('/')[0]} at ${current_price:.2f} | P/L: ${profit:.2f} (After fees)")
+    del st.session_state.open_positions[symbol]
+
+def run_trading_bot():
+    while st.session_state.bot_running:
+        for symbol in CRYPTO_TO_TRADE:
+            if symbol not in st.session_state.open_positions:
+                current_price = get_live_price(symbol)
+                if current_price:
+                    history_prices = pd.Series([get_live_price(symbol) for _ in range(20)] or [current_price] * 20)
+                    signal = get_trading_signal(strategy, current_price, history_prices)
+                    if signal in ["BUY", "SELL"]:
+                        quantity = min(0.001, binance.fetch_balance()['USDT']['free'] / current_price / 10)
+                        if quantity > 0:
+                            execute_trade(symbol, signal, quantity, current_price)
+            else:
+                current_price = get_live_price(symbol)
+                if current_price:
+                    entry_price = st.session_state.open_positions[symbol]['Entry_Price']
+                    profit_pct = (current_price - entry_price) / entry_price * 100
+                    loss_pct = (entry_price - current_price) / entry_price * 100
+                    if profit_pct >= min_profit or loss_pct >= max_loss:
+                        close_trade(symbol, current_price)
+        time.sleep(60)
