@@ -78,6 +78,7 @@ def apply_custom_css():
                 color: #ecf0f1;
                 padding-top: 2rem;
             }
+            /* Specific styling for sidebar buttons */
             .stSidebar .stButton>button {
                 background-color: #f1c40f; /* Gold button */
                 color: #2c3e50 !important; /* Ensure text is visible */
@@ -155,9 +156,10 @@ def apply_custom_css():
             .hero-image {
                 margin: 2rem 0;
             }
-            .stButton>button.cta-button {
+            /* CTA Button on Landing Page */
+            .stButton[key="start_button"] > button {
                 background-color: #f1c40f;
-                color: #2c3e50 !important; /* Ensure text is visible */
+                color: #2c3e50 !important;
                 font-weight: bold;
                 padding: 0.75rem 2rem;
                 font-size: 1.2rem;
@@ -165,9 +167,10 @@ def apply_custom_css():
                 border: none;
                 transition: transform 0.2s;
             }
-            .stButton>button.cta-button:hover {
+            .stButton[key="start_button"] > button:hover {
                 transform: scale(1.05);
             }
+
             /* Styling for the login/signup container */
             .auth-card {
                 max-width: 500px;
@@ -183,7 +186,10 @@ def apply_custom_css():
                 justify-content: center;
                 margin-top: 1rem;
             }
-            .switch-button {
+            /* Specific styling for 'Forgot Password?' and 'Don't have an account? Sign Up' buttons */
+            .stButton[key*="switch_to_"] > button,
+            .stButton[key*="forgot_password_button"] > button,
+            .stButton[key*="back_to_login_from_forgot"] > button {
                 background-color: transparent !important;
                 border: none !important;
                 color: #27ae60 !important; /* Green for link text */
@@ -191,20 +197,21 @@ def apply_custom_css():
                 cursor: pointer;
                 font-size: 0.9em; /* Slightly smaller for switch text */
                 padding: 0.25rem 0.5rem; /* Add padding for better clickability */
+                width: auto; /* Ensure they don't stretch */
             }
-            .switch-button:hover {
+            .stButton[key*="switch_to_"] > button:hover,
+            .stButton[key*="forgot_password_button"] > button:hover,
+            .stButton[key*="back_to_login_from_forgot"] > button:hover {
                 color: #1a7a42 !important; /* Darker green on hover */
             }
-            /* Dashboard layout */
-            .dashboard-section {
-                background-color: #ffffff;
-                padding: 1.5rem;
-                border-radius: 12px;
-                margin-bottom: 1.5rem;
-                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-            }
-            /* General button styling for all Streamlit buttons */
-            .stButton>button {
+
+            /* General styling for other form buttons (Login, Sign Up, Verify 2FA, Update Password) */
+            .stButton[key="login_button"] > button,
+            .stButton[key="signup_button"] > button,
+            .stButton[key="2fa_verify_button"] > button,
+            .stButton[key="send_reset_token_button"] > button,
+            .stButton[key="update_password_button"] > button,
+            .stButton[key="set_new_password_button"] > button { /* Added set_new_password_button */
                 background-color: #f1c40f; /* Gold button */
                 color: #2c3e50 !important; /* Ensure text is visible */
                 font-weight: bold;
@@ -212,12 +219,17 @@ def apply_custom_css():
                 border-radius: 8px;
                 padding: 0.5rem 1rem;
                 transition: all 0.3s ease;
-                width: auto; /* Default to auto width unless specified */
+                width: auto;
             }
-            .stButton>button:hover {
+            .stButton[key="login_button"] > button:hover,
+            .stButton[key="signup_button"] > button:hover,
+            .stButton[key="2fa_verify_button"] > button:hover,
+            .stButton[key="send_reset_token_button"] > button:hover,
+            .stButton[key="update_password_button"] > button:hover,
+            .stButton[key="set_new_password_button"] > button:hover {
                 background-color: #e6b100;
             }
-            
+
             /* Responsive adjustments for smaller screens */
             @media (max-width: 768px) {
                 .landing-header {
@@ -230,7 +242,7 @@ def apply_custom_css():
                     margin: 2rem auto;
                     padding: 1.5rem;
                 }
-                .stButton>button.cta-button {
+                .stButton[key="start_button"] > button {
                     font-size: 1rem;
                     padding: 0.6rem 1.5rem;
                 }
@@ -240,6 +252,12 @@ def apply_custom_css():
                 .stSidebar .stButton>button {
                     padding: 0.4rem 0.8rem;
                     font-size: 0.9em;
+                }
+                .stButton[key*="switch_to_"] > button,
+                .stButton[key*="forgot_password_button"] > button,
+                .stButton[key*="back_to_login_from_forgot"] > button {
+                    font-size: 0.8em;
+                    padding: 0.2rem 0.4rem;
                 }
             }
             @media (max-width: 480px) {
@@ -337,19 +355,24 @@ def login_form():
 
         col1, col2 = st.columns([1, 4])
         with col1:
-            submit_button = st.button("Login", key="login_button")
+            st.button("Login", key="login_button")
         with col2:
             st.markdown('<div class="switch-button-container">', unsafe_allow_html=True)
-            st.button("Forgot Password?", key="forgot_password_button", on_click=lambda: st.session_state.update(show_forgot_password=True, login_error=""), help="Reset your password if you've forgotten it.", class_name="switch-button")
+            st.button("Forgot Password?", key="forgot_password_button", on_click=lambda: st.session_state.update(show_forgot_password=True, login_error=""), help="Reset your password if you've forgotten it.")
             st.markdown('</div>', unsafe_allow_html=True)
 
 
         st.markdown("---")
         st.markdown('<div class="switch-button-container">', unsafe_allow_html=True)
-        st.button("Don't have an account? Sign Up", key="switch_to_signup", on_click=lambda: st.session_state.update(show_signup=True, login_error=""), help="Create a new account.", class_name="switch-button")
+        st.button("Don't have an account? Sign Up", key="switch_to_signup", on_click=lambda: st.session_state.update(show_signup=True, login_error=""), help="Create a new account.")
         st.markdown('</div>', unsafe_allow_html=True)
 
-    if submit_button:
+    # Check for login submission after all buttons are rendered
+    # Streamlit buttons return True if clicked.
+    if st.session_state.get('login_button'):
+        email = st.session_state.login_email
+        password = st.session_state.login_password
+        
         if email:
             c.execute("SELECT password_hash, phone FROM users WHERE email = ?", (email,))
             result = c.fetchone()
@@ -387,14 +410,19 @@ def signup_form():
         password = st.text_input("Password", type="password", placeholder="Create a password", key="signup_password")
         confirm_password = st.text_input("Confirm Password", type="password", placeholder="Re-enter password", key="signup_confirm_password")
         
-        signup_button = st.button("Sign Up", key="signup_button")
+        st.button("Sign Up", key="signup_button")
 
         st.markdown("---")
         st.markdown('<div class="switch-button-container">', unsafe_allow_html=True)
-        st.button("Already have an account? Login", key="switch_to_login", on_click=lambda: st.session_state.update(show_signup=False, login_error="", signup_success=False), help="Go back to the login screen.", class_name="switch-button")
+        st.button("Already have an account? Login", key="switch_to_login", on_click=lambda: st.session_state.update(show_signup=False, login_error="", signup_success=False), help="Go back to the login screen.")
         st.markdown('</div>', unsafe_allow_html=True)
 
-    if signup_button:
+    if st.session_state.get('signup_button'):
+        email = st.session_state.signup_email
+        phone = st.session_state.signup_phone
+        password = st.session_state.signup_password
+        confirm_password = st.session_state.signup_confirm_password
+
         if not email or not password or not confirm_password:
             st.session_state.login_error = "Email, Password, and Confirm Password are required."
         elif password != confirm_password:
@@ -422,9 +450,9 @@ def two_fa_form():
         st.write(f"A 6-digit code has been sent to your registered phone for {st.session_state.user_email}.")
         two_fa_input = st.text_input("Enter 6-digit code", max_chars=6, key="2fa_input")
 
-        submit_button = st.button("Verify 2FA", key="2fa_verify_button")
+        st.button("Verify 2FA", key="2fa_verify_button")
 
-    if submit_button:
+    if st.session_state.get('2fa_verify_button'):
         if two_fa_input == st.session_state.two_fa_code:
             st.session_state.two_fa_passed = True
             st.session_state.login_error = ""
@@ -439,7 +467,10 @@ def forgot_password_form():
         st.subheader("Forgot Password")
         email = st.text_input("Enter your registered email", key="forgot_email")
 
-        if st.button("Send Reset Link/Token", key="send_reset_token_button"):
+        st.button("Send Reset Link/Token", key="send_reset_token_button")
+        
+        if st.session_state.get('send_reset_token_button'):
+            email = st.session_state.forgot_email
             c.execute("SELECT * FROM users WHERE email = ?", (email,))
             if c.fetchone():
                 token = secrets.token_urlsafe(32) # More secure than hex
@@ -477,7 +508,9 @@ def reset_password_page_placeholder():
     token = st.text_input("Reset Token (for demo, copied from email)", key="token_for_reset")
     email_for_reset = st.text_input("Email (for demo)", key="email_for_reset")
 
-    if st.button("Set New Password"):
+    st.button("Set New Password", key="set_new_password_button")
+
+    if st.session_state.get('set_new_password_button'):
         if not new_password or not confirm_new_password or not token or not email_for_reset:
             st.error("All fields are required.")
         elif new_password != confirm_new_password:
@@ -507,7 +540,9 @@ def change_password_form():
     new_password = st.text_input("New Password", type="password", key="new_password_change")
     confirm_new_password = st.text_input("Confirm New Password", type="password", key="confirm_new_password_change")
 
-    if st.button("Update Password", key="update_password_button"):
+    st.button("Update Password", key="update_password_button")
+
+    if st.session_state.get('update_password_button'):
         if not old_password or not new_password or not confirm_new_password:
             st.error("All fields are required.")
         elif new_password != confirm_new_password:
