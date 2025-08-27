@@ -536,8 +536,8 @@ def landing_page():
     st.markdown("<h1 class='landing-header'>MBU TRADING BOT</h1>", unsafe_allow_html=True)
     st.markdown("<h2 class='landing-subheader'>Intelligent, Automated Trading for Your Success</h2>", unsafe_allow_html=True)
     
-    # Using the new image provided by the user
-    st.image("fotor_creation_2025-08-27.jpg", use_container_width=True)
+    # Using the new image provided by the user and fixing the deprecated parameter
+    st.image("fotor_creation_2025-08-27.jpg", width='stretch') # Changed to width='stretch'
 
     st.markdown("<p style='text-align: center; max-width: 600px; margin: auto; font-size: 1.1rem;'>Our intelligent bot analyzes market trends in real-time, executing trades with precision and speed to maximize your returns. We take the emotion out of trading so you can focus on your goals.</p>", unsafe_allow_html=True)
     
@@ -773,14 +773,14 @@ def dashboard_main_content():
             st.markdown("---")
             st.subheader("Open Positions")
             if st.session_state.open_positions:
-                st.dataframe(pd.DataFrame(list(st.session_state.open_positions.values())), use_container_width=True)
+                st.dataframe(pd.DataFrame(list(st.session_state.open_positions.values())), width='stretch') # Changed to width='stretch'
             else:
                 st.info("No open positions.")
             
             st.markdown("---")
             st.subheader("Trades Executed")
             if st.session_state.trades_executed:
-                st.dataframe(pd.DataFrame(st.session_state.trades_executed).iloc[::-1], use_container_width=True) # Reverse for most recent first
+                st.dataframe(pd.DataFrame(st.session_state.trades_executed).iloc[::-1], width='stretch') # Changed to width='stretch'
             else:
                 st.info("No trades executed yet.")
         
@@ -815,7 +815,7 @@ def dashboard_main_content():
                 st.markdown("</div>", unsafe_allow_html=True)
             
             st.subheader("Previous Trades")
-            st.dataframe(pd.DataFrame(st.session_state.trades_executed).iloc[::-1], use_container_width=True)
+            st.dataframe(pd.DataFrame(st.session_state.trades_executed).iloc[::-1], width='stretch') # Changed to width='stretch'
         else:
             st.info("No previous simulated trading data available.")
     st.markdown("</div>", unsafe_allow_html=True) # End dashboard-section
