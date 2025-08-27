@@ -13,12 +13,63 @@ USER_DATA = {
     }
 }
 
-# --- Page Configuration ---
-st.set_page_config(
-    page_title="MBU Trading Bot Dashboard",
-    page_icon="🤖",
-    layout="wide",
-)
+# --- Custom CSS for Green and Gold Theme ---
+def apply_custom_css():
+    """Applies custom CSS for the green and gold theme."""
+    st.markdown("""
+        <style>
+            .stApp {
+                background-color: #f0f2f6; /* Light gray background */
+                color: #2c3e50; /* Dark gray text */
+            }
+            .stHeader {
+                background-color: #27ae60; /* Professional green */
+                padding: 1rem;
+                border-bottom: 2px solid #f1c40f; /* Gold accent */
+            }
+            .stSidebar {
+                background-color: #2c3e50; /* Darker sidebar for contrast */
+                color: #ecf0f1;
+            }
+            .stSidebar .stButton>button {
+                background-color: #f1c40f; /* Gold button */
+                color: #2c3e50;
+                font-weight: bold;
+                border: none;
+                border-radius: 8px;
+            }
+            .stTextInput>div>div>input {
+                background-color: #ecf0f1;
+                border-radius: 8px;
+                border: 1px solid #bdc3c7;
+            }
+            .stSubheader {
+                color: #27ae60; /* Green subheaders */
+                font-weight: bold;
+                border-bottom: 1px solid #ecf0f1;
+                padding-bottom: 0.5rem;
+            }
+            .stMetric > div {
+                background-color: #ffffff;
+                border-radius: 12px;
+                border-left: 5px solid #27ae60; /* Green highlight */
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            }
+            .stDataFrame {
+                border-radius: 12px;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            }
+            /* Add some spacing for a cleaner look */
+            .block-container {
+                padding-top: 2rem;
+                padding-bottom: 2rem;
+            }
+            .st-emotion-cache-18lgl3p {
+                margin-top: 1.5rem;
+            }
+        </style>
+        """, unsafe_allow_html=True)
+
 
 # --- State Management and UI Functions ---
 if "authenticated" not in st.session_state:
@@ -79,7 +130,7 @@ def main_dashboard():
     if st.sidebar.button("Logout"):
         st.session_state.authenticated = False
         st.session_state.two_fa_passed = False
-        st.session_state.two_fa_code = None  # Corrected variable name
+        st.session_state.two_fa_code = None
         st.session_state.user_email = None
         st.rerun()
 
@@ -107,8 +158,10 @@ def main_dashboard():
     })
     st.dataframe(trade_data, use_container_width=True)
 
+
 # --- Main App Logic ---
-st.logo("https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.freepik.com%2Fpremium-vector%2Fmodern-design-simple-initial-mbu-logo-with-swoosh-for-business_22096417.htm&psig=AOvVaw0Yg4g4g4g4g4g4g4g4g4g4g4g4g4g4g4g4g4g4g4g4g4g4g4g4g4g4g4g4g4g4g4&ust=1725514652236000&source=images&cd=vfe&opi=89978449&ved=0CA8QjRxqFwoTCJDq4_Gk9o-GAxUAAAAHAAAAABAJ", link="https://www.mbutradingbot.com")
+apply_custom_css()
+st.logo("https://placehold.co/100x100/27AE60/F1C40F?text=MBU", link="https://www.mbutradingbot.com")
 
 if st.session_state.authenticated:
     if USER_DATA[st.session_state.user_email]["2fa_enabled"]:
