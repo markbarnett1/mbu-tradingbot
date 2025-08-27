@@ -1,6 +1,6 @@
 import streamlit as st
 from brokers.ccxt_brokers import BinanceBroker
-import tradier  # We'll add Tradier setup later
+# import tradier # We'll add Tradier setup later
 import os
 from dotenv import load_dotenv
 import paypalrestsdk
@@ -10,7 +10,7 @@ import datetime
 load_dotenv()
 BINANCE_KEY = os.getenv("BINANCE_API_KEY")
 BINANCE_SECRET = os.getenv("BINANCE_SECRET_KEY")
-TRADIER_KEY = os.getenv("TRADIER_API_KEY")
+# TRADIER_KEY = os.getenv("TRADIER_API_KEY")
 PAYPAL_CLIENT_ID = os.getenv("PAYPAL_CLIENT_ID")
 PAYPAL_CLIENT_SECRET = os.getenv("PAYPAL_CLIENT_SECRET")
 PAYPAL_EMAIL = "mbuniversal.money@hotmail.com"
@@ -23,18 +23,19 @@ paypalrestsdk.configure({
 })
 
 # Free access for you and kids (check email)
-FREE_USERS = ["markbarnett0123456789@gmail.com", "kid1@example.com", "kid2@example.com"]  # Add your kids' emails
+FREE_USERS = ["markbarnett0123456789@gmail.com", "kid1@example.com", "kid2@example.com"] # Add your kids' emails
 
 # Simple trading function (Tradier for stocks, Binance for crypto)
 def trade(asset_type, symbol, side, qty):
     if asset_type == "stocks":
         # Tradier setup (placeholder, we'll expand)
-        account_id = "your_tradier_account_id"  # Get from Tradier dashboard
-        tradier_api = tradier.Tradier(TRADIER_KEY)
-        if side == "buy":
-            tradier_api.place_order(account_id, symbol, qty, "buy", "market")
-        else:
-            tradier_api.place_order(account_id, symbol, qty, "sell", "market")
+        # account_id = "your_tradier_account_id" # Get from Tradier dashboard
+        # tradier_api = tradier.Tradier(TRADIER_KEY)
+        # if side == "buy":
+        #     tradier_api.place_order(account_id, symbol, qty, "buy", "market")
+        # else:
+        #     tradier_api.place_order(account_id, symbol, qty, "sell", "market")
+        st.error("Tradier functionality is not yet active. Please use crypto trading.")
     else:  # crypto
         binance = BinanceBroker(BINANCE_KEY, BINANCE_SECRET)
         if side == "buy":
